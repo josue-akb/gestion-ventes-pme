@@ -27,7 +27,7 @@ jobs:
         working-directory: backend
 
       - name: Run tests
-        run: npm test -- --passWithNoTests
+        run: npx jest --passWithNoTests
         working-directory: backend
 
   frontend:
