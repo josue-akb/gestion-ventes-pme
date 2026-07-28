@@ -29,6 +29,10 @@ jobs:
       - name: Run tests
         run: npm test
         working-directory: backend
+        env:
+          JWT_SECRET: gv_super_secret_key_2025_xK9mP
+          JWT_REFRESH_SECRET: gv_refresh_secret_key_2025_zL4nQ
+          NODE_ENV: test
 
   frontend:
     name: Frontend — Build
