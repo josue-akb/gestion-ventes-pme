@@ -4,6 +4,9 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/authRoutes.js';
+import productRoutes from './routes/productRoutes.js';
+
+
 
 const app = express();
 
@@ -20,5 +23,6 @@ app.get('/', (req, res) => {
   res.json({ message: 'API Gestion Ventes — OK' });
 });
 app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
 
 export default app;
