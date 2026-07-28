@@ -1,37 +1,32 @@
-
+// backend/__tests__/auth.test.js
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import request from 'supertest';
-import bcrypt from 'bcryptjs';
 import app from '../src/app.js';
 import User from '../src/models/User.js';
 
 let mongod;
-
 
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   const uri = mongod.getUri();
   await mongoose.connect(uri);
 
- 
-  const hash = await bcrypt.hash('Admin1234!', 12);
+  
   await User.create({
     nom: 'Denis',
     prenom: 'Alexandre',
     email: 'admin@gvpme.fr',
-    motDePasse: hash,
+    motDePasse: 'Admin1234!',
     role: 'admin',
     actif: true,
   });
 }, 30000);
 
-
 afterAll(async () => {
   await mongoose.disconnect();
   await mongod.stop();
 }, 30000);
-
 
 describe('Auth — POST /api/auth/login', () => {
 
@@ -80,7 +75,6 @@ describe('Auth — POST /api/auth/login', () => {
   }, 10000);
 
 });
-
 
 describe('Auth — POST /api/auth/logout', () => {
 
