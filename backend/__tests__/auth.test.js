@@ -1,10 +1,41 @@
 
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import mongoose from 'mongoose';
 import request from 'supertest';
+import bcrypt from 'bcryptjs';
 import app from '../src/app.js';
+import User from '../src/models/User.js';
+
+let mongod;
+
+
+beforeAll(async () => {
+  mongod = await MongoMemoryServer.create();
+  const uri = mongod.getUri();
+  await mongoose.connect(uri);
+
+ 
+  const hash = await bcrypt.hash('Admin1234!', 12);
+  await User.create({
+    nom: 'Denis',
+    prenom: 'Alexandre',
+    email: 'admin@gvpme.fr',
+    motDePasse: hash,
+    role: 'admin',
+    actif: true,
+  });
+}, 30000);
+
+
+afterAll(async () => {
+  await mongoose.disconnect();
+  await mongod.stop();
+}, 30000);
+
 
 describe('Auth — POST /api/auth/login', () => {
 
-  test('✅ Login réussi avec credentials valides', async () => {
+  test(' Login réussi avec credentials valides', async () => {
     const res = await request(app)
       .post('/api/auth/login')
       .send({ email: 'admin@gvpme.fr', motDePasse: 'Admin1234!' });
@@ -12,9 +43,9 @@ describe('Auth — POST /api/auth/login', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty('accessToken');
     expect(res.body.user.role).toBe('admin');
-  });
+  }, 10000);
 
-  test('❌ Email manquant → 400', async () => {
+  test(' Email manquant → 400', async () => {
     const res = await request(app)
       .post('/api/auth/login')
       .send({ motDePasse: 'Admin1234!' });
@@ -23,7 +54,7 @@ describe('Auth — POST /api/auth/login', () => {
     expect(res.body.message).toMatch(/email/i);
   });
 
-  test('❌ Mot de passe manquant → 400', async () => {
+  test(' Mot de passe manquant → 400', async () => {
     const res = await request(app)
       .post('/api/auth/login')
       .send({ email: 'admin@gvpme.fr' });
@@ -31,29 +62,29 @@ describe('Auth — POST /api/auth/login', () => {
     expect(res.statusCode).toBe(400);
   });
 
-  test('❌ Mauvais mot de passe → 401', async () => {
+  test(' Mauvais mot de passe → 401', async () => {
     const res = await request(app)
       .post('/api/auth/login')
       .send({ email: 'admin@gvpme.fr', motDePasse: 'mauvaismdp' });
 
     expect(res.statusCode).toBe(401);
     expect(res.body.message).toBe('Identifiants incorrects');
-  });
+  }, 10000);
 
-  test('❌ Email inexistant → 401', async () => {
+  test(' Email inexistant → 401', async () => {
     const res = await request(app)
       .post('/api/auth/login')
       .send({ email: 'inexistant@test.fr', motDePasse: 'Admin1234!' });
 
     expect(res.statusCode).toBe(401);
-  });
+  }, 10000);
 
 });
 
+
 describe('Auth — POST /api/auth/logout', () => {
 
-  test('✅ Logout réussi avec token valide', async () => {
-    
+  test(' Logout réussi avec token valide', async () => {
     const login = await request(app)
       .post('/api/auth/login')
       .send({ email: 'admin@gvpme.fr', motDePasse: 'Admin1234!' });
@@ -66,9 +97,9 @@ describe('Auth — POST /api/auth/logout', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body.message).toMatch(/déconnexion/i);
-  });
+  }, 10000);
 
-  test('❌ Logout sans token → 401', async () => {
+  test(' Logout sans token → 401', async () => {
     const res = await request(app)
       .post('/api/auth/logout');
 
