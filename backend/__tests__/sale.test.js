@@ -16,7 +16,6 @@ beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   await mongoose.connect(mongod.getUri());
 
-  // Créer utilisateur admin
   await User.create({
     nom: 'Denis', prenom: 'Alexandre',
     email: 'admin@gvpme.fr',
@@ -24,31 +23,25 @@ beforeAll(async () => {
     role: 'admin', actif: true,
   });
 
-  // Login
-  const res = await request(app)
+  const loginRes = await request(app)
     .post('/api/auth/login')
     .send({ email: 'admin@gvpme.fr', motDePasse: 'Admin1234!' });
-  adminToken = res.body.accessToken;
+  adminToken = loginRes.body.accessToken;
 
-  // Créer un client de test
   const client = await Client.create({
     nom: 'Martin', prenom: 'Sophie',
-    email: 'sophie@test.fr',
-    actif: true,
+    email: 'sophie@test.fr', actif: true,
   });
   clientId = client._id.toString();
 
-  // Créer un produit de test avec stock suffisant
   const product = await Product.create({
-    nom: 'Produit Alpha',
-    categorie: 'Electronique',
-    prixHT: 100,
-    tauxTVA: 20,
-    stock: 50,
-    seuilAlerte: 5,
-    actif: true,
+    nom: 'Produit Alpha', categorie: 'Electronique',
+    prixHT: 100, tauxTVA: 20,
+    stock: 50, seuilAlerte: 5, actif: true,
   });
   productId = product._id.toString();
+
+  console.log('Setup OK — clientId:', clientId, 'productId:', productId);
 }, 30000);
 
 afterAll(async () => {
@@ -77,7 +70,7 @@ describe('Sales — POST /api/sales', () => {
 
   test(' Stock décrémenté après vente', async () => {
     const product = await Product.findById(productId);
-    expect(product.stock).toBe(48); // 50 - 2
+    expect(product.stock).toBe(48);
   }, 10000);
 
   test(' Vente avec remise ligne 10%', async () => {
@@ -92,7 +85,6 @@ describe('Sales — POST /api/sales', () => {
       });
 
     expect(res.statusCode).toBe(201);
-    // 100 × (1 - 0.1) = 90 HT + 18 TVA = 108 TTC
     expect(res.body.sale.totalTTC).toBe(108);
   }, 15000);
 
@@ -127,11 +119,7 @@ describe('Sales — POST /api/sales', () => {
     const res = await request(app)
       .post('/api/sales')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({
-        clientId,
-        lignes: [],
-        modePaiement: 'CB',
-      });
+      .send({ clientId, lignes: [], modePaiement: 'CB' });
 
     expect(res.statusCode).toBe(400);
   }, 10000);
@@ -139,7 +127,11 @@ describe('Sales — POST /api/sales', () => {
   test(' Sans token → 401', async () => {
     const res = await request(app)
       .post('/api/sales')
-      .send({ clientId, lignes: [{ produitId, quantite: 1 }], modePaiement: 'CB' });
+      .send({
+        clientId,
+        lignes: [{ produitId, quantite: 1 }],
+        modePaiement: 'CB',
+      });
 
     expect(res.statusCode).toBe(401);
   });
