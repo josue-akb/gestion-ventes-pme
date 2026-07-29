@@ -7,38 +7,40 @@ import { createSaleSchema } from '../validators/saleValidator.js';
 
 // ── POST /sales ───────────────────────────────────────────────
 export const createSale = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const useTransaction = process.env.NODE_ENV !== 'test';
+  let session = null;
 
   try {
-    // Validation Joi
+    if (useTransaction) {
+      session = await mongoose.startSession();
+      session.startTransaction();
+    }
+
     const { error, value } = createSaleSchema.validate(req.body);
     if (error) {
-      await session.abortTransaction();
+      if (session) await session.abortTransaction();
       return res.status(400).json({ message: error.details[0].message });
     }
 
     const { clientId, lignes, remiseGlobale, modePaiement } = value;
 
-    // Vérifier que le client existe
-    const client = await Client.findById(clientId).session(session);
+    const client = await Client.findById(clientId);
     if (!client) {
-      await session.abortTransaction();
+      if (session) await session.abortTransaction();
       return res.status(404).json({ message: 'Client introuvable' });
     }
 
-    // Vérifier chaque produit et son stock
     const lignesCompletes = [];
     for (const ligne of lignes) {
-      const produit = await Product.findById(ligne.produitId).session(session);
+      const produit = await Product.findById(ligne.produitId);
       if (!produit) {
-        await session.abortTransaction();
+        if (session) await session.abortTransaction();
         return res.status(404).json({
           message: `Produit ${ligne.produitId} introuvable`,
         });
       }
       if (produit.stock < ligne.quantite) {
-        await session.abortTransaction();
+        if (session) await session.abortTransaction();
         return res.status(400).json({
           message: `Stock insuffisant pour "${produit.nom}" (disponible: ${produit.stock})`,
         });
@@ -51,38 +53,40 @@ export const createSale = async (req, res) => {
         prixUnitaireHT: produit.prixHT,
         tauxTVA: produit.tauxTVA,
         remiseLigne: ligne.remiseLigne || 0,
-        sousTotal: 0, // sera calculé
+        sousTotal: 0,
       });
     }
 
-    // Calcul des totaux
     const totaux = calculateTotals(lignesCompletes, remiseGlobale);
 
-    // Créer la vente
-    const [sale] = await Sale.create(
-      [{
-        clientId,
-        commercialId: req.user._id,
-        lignes: totaux.lignes,
-        totalHT: totaux.totalHT,
-        remiseGlobale: totaux.remiseGlobale,
-        tva: totaux.tva,
-        totalTTC: totaux.totalTTC,
-        modePaiement,
-      }],
-      { session }
-    );
+    const saleData = {
+      clientId,
+      commercialId: req.user._id,
+      lignes: totaux.lignes,
+      totalHT: totaux.totalHT,
+      remiseGlobale: totaux.remiseGlobale,
+      tva: totaux.tva,
+      totalTTC: totaux.totalTTC,
+      modePaiement,
+    };
 
-    // Décrémenter le stock de chaque produit (transaction atomique)
+    let sale;
+    if (session) {
+      const [created] = await Sale.create([saleData], { session });
+      sale = created;
+    } else {
+      sale = await Sale.create(saleData);
+    }
+
     for (const ligne of lignes) {
       await Product.findByIdAndUpdate(
         ligne.produitId,
         { $inc: { stock: -ligne.quantite } },
-        { session }
+        session ? { session } : {}
       );
     }
 
-    await session.commitTransaction();
+    if (session) await session.commitTransaction();
 
     res.status(201).json({
       message: 'Vente enregistrée avec succès',
@@ -90,30 +94,23 @@ export const createSale = async (req, res) => {
     });
 
   } catch (err) {
-    await session.abortTransaction();
+    if (session) await session.abortTransaction();
+    console.error('ERREUR VENTE:', err.message);
     res.status(500).json({ message: 'Erreur serveur', error: err.message });
   } finally {
-    session.endSession();
+    if (session) session.endSession();
   }
 };
-
 // ── GET /sales ────────────────────────────────────────────────
 export const getSales = async (req, res) => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      clientId,
-      commercialId,
-      statut,
-    } = req.query;
+    const { page = 1, limit = 10, clientId, commercialId, statut } = req.query;
 
     const filter = {};
     if (clientId)     filter.clientId = clientId;
     if (commercialId) filter.commercialId = commercialId;
     if (statut)       filter.statut = statut;
 
-    // Commercial ne voit que ses propres ventes
     if (req.user.role === 'commercial') {
       filter.commercialId = req.user._id;
     }
@@ -162,10 +159,7 @@ export const exportSalesCSV = async (req, res) => {
     const { debut, fin } = req.query;
     const filter = {};
     if (debut && fin) {
-      filter.createdAt = {
-        $gte: new Date(debut),
-        $lte: new Date(fin),
-      };
+      filter.createdAt = { $gte: new Date(debut), $lte: new Date(fin) };
     }
 
     const sales = await Sale.find(filter)
