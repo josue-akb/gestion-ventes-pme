@@ -4,6 +4,8 @@ import Product from '../models/Product.js';
 import Client from '../models/Client.js';
 import { calculateTotals } from '../services/saleService.js';
 import { createSaleSchema } from '../validators/saleValidator.js';
+import Invoice from '../models/Invoice.js';
+import { generateInvoicePDF } from '../services/invoiceService.js';
 
 // ── POST /sales ───────────────────────────────────────────────
 export const createSale = async (req, res) => {
@@ -88,11 +90,38 @@ export const createSale = async (req, res) => {
 
     if (session) await session.commitTransaction();
 
-    res.status(201).json({
-      message: 'Vente enregistrée avec succès',
-      sale: await sale.populate(['clientId', 'commercialId']),
+   const salePopulated = await sale.populate(['clientId', 'commercialId']);
+
+   // Générer la facture automatiquement
+    const invoice = await Invoice.create({
+      venteId: sale._id,
+      clientId: salePopulated.clientId._id,
+      commercialId: sale.commercialId,
+      montants: {
+        totalHT:       totaux.totalHT,
+        remiseGlobale: totaux.remiseGlobale,
+        tva:           totaux.tva,
+        totalTTC:      totaux.totalTTC,
+      },
     });
 
+    try {
+      await generateInvoicePDF(invoice, salePopulated, salePopulated.clientId);
+      invoice.urlPdf = `/api/invoices/download/${invoice._id}`;
+      await invoice.save();
+    } catch (pdfErr) {
+      console.error('Erreur PDF (non bloquante):', pdfErr.message);
+    }
+
+    res.status(201).json({
+      message: 'Vente enregistrée avec succès',
+      sale: salePopulated,
+      invoice: {
+        id: invoice._id,
+        numero: invoice.numero,
+        urlPdf: invoice.urlPdf,
+      },
+    });
   } catch (err) {
     if (session) await session.abortTransaction();
     console.error('ERREUR VENTE:', err.message);
@@ -177,4 +206,12 @@ export const exportSalesCSV = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Erreur serveur', error: err.message });
   }
+  try {
+      await generateInvoicePDF(invoice, salePopulated, salePopulated.clientId);
+      invoice.urlPdf = `/api/invoices/download/${invoice._id}`;
+      await invoice.save();
+      console.log('✅ Facture générée :', invoice.numero);
+    } catch (pdfErr) {
+      console.error('❌ Erreur PDF :', pdfErr.message, pdfErr.stack);
+    }
 };
