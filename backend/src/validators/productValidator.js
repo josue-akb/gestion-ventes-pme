@@ -15,6 +15,10 @@ export const createProductSchema = Joi.object({
 });
 
 export const updateProductSchema = Joi.object({
+  _id:          Joi.any().strip(),
+  __v:          Joi.any().strip(),
+  createdAt:    Joi.any().strip(),
+  updatedAt:    Joi.any().strip(),
   nom:          Joi.string().trim().min(2).max(100),
   categorie:    Joi.string().trim().min(2).max(50),
   prixHT:       Joi.number().min(0),
@@ -23,4 +27,4 @@ export const updateProductSchema = Joi.object({
   seuilAlerte:  Joi.number().integer().min(0),
   description:  Joi.string().trim().max(500).allow(''),
   actif:        Joi.boolean(),
-}).min(1); // au moins 1 champ requis pour la mise à jour
+}).min(1);

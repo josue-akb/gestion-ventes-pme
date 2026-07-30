@@ -14,6 +14,10 @@ export const createClientSchema = Joi.object({
 });
 
 export const updateClientSchema = Joi.object({
+  _id:        Joi.any().strip(),
+  __v:        Joi.any().strip(),
+  createdAt:  Joi.any().strip(),
+  updatedAt:  Joi.any().strip(),
   nom:        Joi.string().trim().min(2).max(100),
   prenom:     Joi.string().trim().min(2).max(100),
   email:      Joi.string().email(),
