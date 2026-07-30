@@ -8,6 +8,7 @@ import productRoutes from './routes/productRoutes.js';
 import clientRoutes from './routes/clientRoutes.js';
 import saleRoutes from './routes/saleRoutes.js';
 import invoiceRoutes from './routes/invoiceRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
 
 const app = express();
 
@@ -26,5 +27,6 @@ app.use('/api/products', productRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/invoices', invoiceRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 export default app;
