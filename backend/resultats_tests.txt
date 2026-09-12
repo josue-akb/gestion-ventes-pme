@@ -1,0 +1,140 @@
+(node:12632) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[0mPOST /api/auth/login [32m200[0m 336.805 ms - 325[0m
+[0mPOST /api/auth/login [32m200[0m 330.780 ms - 337[0m
+[0mGET /api/dashboard [32m200[0m 23.522 ms - 540[0m
+[0mGET /api/dashboard?periode=mois [32m200[0m 17.512 ms - 540[0m
+[0mGET /api/dashboard [32m200[0m 18.154 ms - 540[0m
+[0mGET /api/dashboard [32m200[0m 17.608 ms - 540[0m
+[0mGET /api/dashboard [33m403[0m 2.341 ms - 68[0m
+[0mGET /api/dashboard [33m401[0m 0.165 ms - 46[0m
+[0mGET /api/dashboard?periode=semaine [32m200[0m 16.805 ms - 543[0m
+[0mGET /api/dashboard/stats/ventes [32m200[0m 4.244 ms - 53[0m
+PASS __tests__/dashboard.test.js
+  Dashboard — GET /api/dashboard
+    √  Dashboard accessible admin → 200 (30 ms)
+    √  KPIs corrects (23 ms)
+    √  Top produits présent (23 ms)
+    √  Performances commerciaux présentes (21 ms)
+    √  Commercial non autorisé → 403 (7 ms)
+    √  Sans token → 401 (5 ms)
+    √  Filtre période semaine → 200 (21 ms)
+  Dashboard — GET /api/dashboard/stats/ventes
+    √  Stats ventes → 200 (8 ms)
+
+[0mPOST /api/auth/login [32m200[0m 357.319 ms - 325[0m
+[0mPOST /api/auth/login [33m400[0m 0.803 ms - 31[0m
+[0mPOST /api/auth/login [33m400[0m 0.324 ms - 38[0m
+[0mPOST /api/auth/login [33m401[0m 329.768 ms - 37[0m
+[0mPOST /api/auth/login [33m401[0m 2.066 ms - 37[0m
+[0mPOST /api/auth/login [32m200[0m 335.248 ms - 325[0m
+Sat, 12 Sep 2026 11:04:21 GMT express deprecated res.clearCookie: Passing "options.maxAge" is deprecated. In v5.0.0 of Express, this option will be ignored, as res.clearCookie will automatically set cookies to expire immediately. Please update your code to omit this option. at src\controllers\authController.js:102:7
+[0mPOST /api/auth/logout [32m200[0m 3.965 ms - 35[0m
+[0mPOST /api/auth/logout [33m401[0m 0.282 ms - 46[0m
+PASS __tests__/auth.test.js
+  Auth — POST /api/auth/login
+    √  Login réussi avec credentials valides (387 ms)
+    √  Email manquant → 400 (5 ms)
+    √  Mot de passe manquant → 400 (4 ms)
+    √  Mauvais mot de passe → 401 (333 ms)
+    √  Email inexistant → 401 (6 ms)
+  Auth — POST /api/auth/logout
+    √  Logout réussi avec token valide (347 ms)
+    √  Logout sans token → 401 (4 ms)
+
+[0mPOST /api/auth/login [32m200[0m 363.305 ms - 325[0m
+  console.log
+    Setup OK — clientId: 6aa531b87defd56e09ba06fc productId: 6aa531b87defd56e09ba06fe
+
+      at Object.<anonymous> (__tests__/sale.test.js:48:11)
+
+[0mPOST /api/sales [32m201[0m 96.358 ms - 1101[0m
+[0mPOST /api/sales [32m201[0m 37.242 ms - 1107[0m
+[0mPOST /api/sales [33m400[0m 5.492 ms - 71[0m
+[0mPOST /api/sales [33m404[0m 3.582 ms - 32[0m
+[0mPOST /api/sales [33m400[0m 3.079 ms - 54[0m
+[0mPOST /api/sales [33m401[0m 0.321 ms - 46[0m
+[0mGET /api/sales [32m200[0m 13.639 ms - 1244[0m
+[0mGET /api/sales/6aa531b87defd56e09ba0703 [32m200[0m 8.491 ms - 635[0m
+[0mGET /api/sales/000000000000000000000000 [33m404[0m 3.441 ms - 31[0m
+PASS __tests__/sale.test.js
+  Sales — POST /api/sales
+    √  Créer une vente valide → 201 (102 ms)
+    √  Stock décrémenté après vente (2 ms)
+    √  Vente avec remise ligne 10% (41 ms)
+    √  Stock insuffisant → 400 (10 ms)
+    √  Client inexistant → 404 (8 ms)
+    √  Lignes vides → 400 (7 ms)
+    √  Sans token → 401 (5 ms)
+  Sales — GET /api/sales
+    √  Lister les ventes → 200 (18 ms)
+    √  Récupérer une vente par ID → 200 (12 ms)
+    √  ID inexistant → 404 (7 ms)
+
+[0mPOST /api/auth/login [32m200[0m 454.091 ms - 325[0m
+[0mPOST /api/clients [32m201[0m 9.247 ms - 256[0m
+[0mPOST /api/clients [33m409[0m 4.213 ms - 52[0m
+[0mPOST /api/clients [33m400[0m 3.151 ms - 45[0m
+[0mPOST /api/clients [33m401[0m 0.154 ms - 46[0m
+[0mGET /api/clients [32m200[0m 10.080 ms - 325[0m
+[0mGET /api/clients/6aa531baa6a2d82b5f80de93 [32m200[0m 4.611 ms - 256[0m
+[0mGET /api/clients/6aa531baa6a2d82b5f80de93/historique [32m200[0m 3.732 ms - 311[0m
+[0mGET /api/clients/000000000000000000000000 [33m404[0m 4.183 ms - 32[0m
+[0mPUT /api/clients/6aa531baa6a2d82b5f80de93 [32m200[0m 8.097 ms - 257[0m
+[0mPUT /api/clients/6aa531baa6a2d82b5f80de93 [33m400[0m 2.613 ms - 48[0m
+[0mDELETE /api/clients/6aa531baa6a2d82b5f80de93 [32m200[0m 4.551 ms - 300[0m
+PASS __tests__/client.test.js
+  Clients — POST /api/clients
+    √  Créer un client valide → 201 (14 ms)
+    √  Email dupliqué → 409 (8 ms)
+    √  Email invalide → 400 (6 ms)
+    √  Sans token → 401 (3 ms)
+  Clients — GET /api/clients
+    √  Lister les clients → 200 (15 ms)
+    √  Récupérer un client par ID → 200 (8 ms)
+    √  Historique client → 200 (8 ms)
+    √  ID inexistant → 404 (8 ms)
+  Clients — PUT /api/clients/:id
+    √  Modifier un client → 200 (12 ms)
+    √  Body vide → 400 (6 ms)
+  Clients — DELETE /api/clients/:id
+    √  Désactiver un client → 200 (8 ms)
+
+[0mPOST /api/auth/login [32m200[0m 355.689 ms - 325[0m
+[0mPOST /api/products [32m201[0m 7.034 ms - 235[0m
+[0mPOST /api/products [33m400[0m 3.135 ms - 36[0m
+[0mPOST /api/products [33m400[0m 2.740 ms - 59[0m
+[0mPOST /api/products [33m401[0m 0.167 ms - 46[0m
+[0mGET /api/products [32m200[0m 9.374 ms - 305[0m
+[0mGET /api/products/6aa531bd71f8d5c9d5f90beb [32m200[0m 4.943 ms - 235[0m
+[0mGET /api/products/000000000000000000000000 [33m404[0m 3.840 ms - 33[0m
+[0mPUT /api/products/6aa531bd71f8d5c9d5f90beb [32m200[0m 8.333 ms - 236[0m
+[0mPUT /api/products/6aa531bd71f8d5c9d5f90beb [33m400[0m 2.904 ms - 48[0m
+[0mDELETE /api/products/6aa531bd71f8d5c9d5f90beb [32m200[0m 4.011 ms - 281[0m
+[0mGET /api/products/alertes/stock-bas [32m200[0m 5.167 ms - 254[0m
+PASS __tests__/product.test.js
+  Products — POST /api/products
+    √  Créer un produit valide → 201 (13 ms)
+    √  Champ nom manquant → 400 (7 ms)
+    √  Prix négatif → 400 (7 ms)
+    √  Sans token → 401 (4 ms)
+  Products — GET /api/products
+    √  Lister les produits → 200 (14 ms)
+    √  Récupérer un produit par ID → 200 (9 ms)
+    √ ❌ ID inexistant → 404 (7 ms)
+  Products — PUT /api/products/:id
+    √  Modifier un produit → 200 (13 ms)
+    √ ❌ Body vide → 400 (7 ms)
+  Products — DELETE /api/products/:id
+    √  Désactiver un produit → 200 (7 ms)
+  Products — Alertes stock
+    √  Récupérer les alertes stock bas → 200 (11 ms)
+
+PASS __tests__/health.test.js
+  √ test runner fonctionne (2 ms)
+
+Test Suites: 6 passed, 6 total
+Tests:       48 passed, 48 total
+Snapshots:   0 total
+Time:        15.983 s, estimated 25 s
+Ran all test suites.
