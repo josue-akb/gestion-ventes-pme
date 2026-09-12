@@ -4,19 +4,14 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, BarChart, Bar
 } from 'recharts';
-import { TrendingUp, ShoppingCart, Users, AlertTriangle } from 'lucide-react';
 
-const KPICard = ({ label, value, sub, icon: Icon, color }) => (
-  <div className={`bg-white rounded-xl p-4 shadow-sm border-t-4`} style={{ borderColor: color }}>
-    <div className="flex items-start justify-between">
-      <div>
-        <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">{label}</p>
-        <p className="text-2xl font-bold text-[#1F3864] mt-1">{value}</p>
-        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
-      </div>
-      <div className="p-2 rounded-lg" style={{ backgroundColor: color + '20' }}>
-        <Icon size={18} style={{ color }} />
-      </div>
+
+const KPICard = ({ label, value, sub, color }) => (
+  <div className="bg-white rounded-xl p-4 shadow-sm border-t-4" style={{ borderColor: color }}>
+    <div>
+      <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">{label}</p>
+      <p className="text-2xl font-bold text-[#1F3864] mt-1">{value}</p>
+      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
     </div>
   </div>
 );
@@ -76,10 +71,10 @@ export default function DashboardPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-4 gap-4">
-        <KPICard label="Chiffre d'affaires" value={`${kpis?.totalCA?.toLocaleString('fr-FR')} €`} icon={TrendingUp} color="#1F3864" />
-        <KPICard label="Nombre de ventes"   value={kpis?.nbVentes} sub={`Panier moyen : ${kpis?.panierMoyen?.toFixed(0)} €`} icon={ShoppingCart} color="#2E75B6" />
-        <KPICard label="Nouveaux clients"   value={kpis?.nouveauxClients} icon={Users} color="#1D9E75" />
-        <KPICard label="Alertes stock"       value={kpis?.stockAlertes} icon={AlertTriangle} color="#E65100" />
+        <KPICard label="Chiffre d'affaires" value={`${kpis?.totalCA?.toLocaleString('fr-FR')} €`} color="#1F3864" />
+<KPICard label="Nombre de ventes" value={kpis?.nbVentes} sub={`Panier moyen : ${kpis?.panierMoyen?.toFixed(0)} €`} color="#2E75B6" />
+<KPICard label="Nouveaux clients" value={kpis?.nouveauxClients} color="#1D9E75" />
+<KPICard label="Alertes stock" value={kpis?.stockAlertes} color="#E65100" />
       </div>
 
       {/* Graphiques */}

@@ -19,6 +19,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.0.0",
     "morgan": "^1.10.0",
+    "node.js": "^0.0.1-security",
     "pdfkit": "^0.19.1"
   },
   "devDependencies": {
