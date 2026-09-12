@@ -6,6 +6,11 @@ import { calculateTotals } from '../services/saleService.js';
 import { createSaleSchema } from '../validators/saleValidator.js';
 import Invoice from '../models/Invoice.js';
 import { generateInvoicePDF } from '../services/invoiceService.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ── POST /sales ───────────────────────────────────────────────
 export const createSale = async (req, res) => {
