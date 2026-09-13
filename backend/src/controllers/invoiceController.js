@@ -210,14 +210,14 @@ export const downloadInvoice = async (req, res) => {
     doc.moveTo(50, y + 4).lineTo(545, y + 4)
       .strokeColor('#CCCCCC').lineWidth(0.5).stroke();
 
-    // ── TOTAUX ────────────────────────────────────────────────
+       // ── TOTAUX ────────────────────────────────────────────────
     y += 16;
 
     doc.font('Helvetica').fontSize(10).fillColor('#000000')
       .text('Total HT :', 350, y)
       .text(`${vente.totalHT.toFixed(2)} €`, 460, y, { width: 85, align: 'right' });
 
-    y += 18;
+    y += 20;
 
     if (vente.remiseGlobale > 0) {
       doc.text(`Remise (${(vente.remiseGlobale * 100).toFixed(0)}%) :`, 350, y)
@@ -225,18 +225,20 @@ export const downloadInvoice = async (req, res) => {
           `-${(vente.totalHT * vente.remiseGlobale / (1 - vente.remiseGlobale)).toFixed(2)} €`,
           460, y, { width: 85, align: 'right' }
         );
-      y += 18;
+      y += 20;
     }
 
     doc.fillColor('#000000')
       .text('TVA :', 350, y)
       .text(`${vente.tva.toFixed(2)} €`, 460, y, { width: 85, align: 'right' });
 
-    y += 6;
+    y += 24; // ← espace APRÈS la TVA avant la ligne
+
     doc.moveTo(350, y).lineTo(545, y)
       .strokeColor('#1F3864').lineWidth(1).stroke();
 
-    y += 8;
+    y += 10; // ← espace APRÈS la ligne avant TOTAL TTC
+
     doc.font('Helvetica-Bold').fontSize(12).fillColor('#000000')
       .text('TOTAL TTC :', 350, y)
       .text(`${vente.totalTTC.toFixed(2)} €`, 460, y, { width: 85, align: 'right' });
