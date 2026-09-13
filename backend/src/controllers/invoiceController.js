@@ -1,6 +1,8 @@
+// backend/src/controllers/invoiceController.js
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import PDFDocument from 'pdfkit';
 import Invoice from '../models/Invoice.js';
 import Sale from '../models/Sale.js';
 import Client from '../models/Client.js';
@@ -15,7 +17,6 @@ export const createInvoice = async (req, res) => {
     if (!venteId)
       return res.status(400).json({ message: 'venteId obligatoire' });
 
-    // Vérifier que la vente existe
     const vente = await Sale.findById(venteId)
       .populate('clientId')
       .populate('commercialId', 'nom prenom');
@@ -23,7 +24,6 @@ export const createInvoice = async (req, res) => {
     if (!vente)
       return res.status(404).json({ message: 'Vente introuvable' });
 
-    // Vérifier qu'une facture n'existe pas déjà
     const existante = await Invoice.findOne({ venteId });
     if (existante)
       return res.status(409).json({
@@ -33,7 +33,6 @@ export const createInvoice = async (req, res) => {
 
     const client = vente.clientId;
 
-    // Créer la facture en base
     const invoice = await Invoice.create({
       venteId,
       clientId: client._id,
@@ -46,9 +45,8 @@ export const createInvoice = async (req, res) => {
       },
     });
 
-    // Générer le PDF
     const { fileName } = await generateInvoicePDF(invoice, vente, client);
-    invoice.urlPdf = `/invoices/download/${invoice._id}`;
+    invoice.urlPdf = `/api/invoices/download/${invoice._id}`;
     await invoice.save();
 
     res.status(201).json({
@@ -121,37 +119,46 @@ export const downloadInvoice = async (req, res) => {
     const vente = invoice.venteId;
     const client = invoice.clientId;
 
+    if (!vente || !client)
+      return res.status(404).json({ message: 'Données de vente introuvables' });
+
     // Générer le PDF à la volée
-    const PDFDocument = (await import('pdfkit')).default;
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=${invoice.numero}.pdf`);
-
     doc.pipe(res);
 
-    // En-tête
-    doc.fontSize(22).font('Helvetica-Bold').text('FACTURE', { align: 'center' });
+    // ── EN-TÊTE ───────────────────────────────────────────────
+    doc.fontSize(22).font('Helvetica-Bold')
+      .fillColor('#000000')
+      .text('FACTURE', { align: 'center' });
+
     doc.fontSize(11).font('Helvetica')
+      .fillColor('#000000')
       .moveDown(0.5)
       .text(`N° ${invoice.numero}`, { align: 'right' })
       .text(`Date : ${new Date(invoice.dateEmission).toLocaleDateString('fr-FR')}`, { align: 'right' });
 
-    doc.moveDown()
-      .moveTo(50, doc.y).lineTo(545, doc.y)
-      .strokeColor('1F3864').lineWidth(2).stroke().moveDown();
+    doc.moveDown();
+    doc.moveTo(50, doc.y).lineTo(545, doc.y)
+      .strokeColor('#1F3864').lineWidth(2).stroke();
+    doc.moveDown();
 
-    // Vendeur / Client
+    // ── VENDEUR / CLIENT ──────────────────────────────────────
     const yBloc = doc.y;
-    doc.fontSize(9).font('Helvetica-Bold').text('VENDEUR', 50, yBloc)
-      .font('Helvetica')
+
+    doc.fontSize(9).font('Helvetica-Bold').fillColor('#000000')
+      .text('VENDEUR', 50, yBloc);
+    doc.font('Helvetica').fillColor('#000000')
       .text('GV PME SAS', 50)
       .text('SIRET : 000 000 000 00000')
       .text('1 rue de la Paix, 75001 Paris')
       .text('contact@gvpme.fr');
 
-    doc.fontSize(9).font('Helvetica-Bold').text('CLIENT', 300, yBloc)
-      .font('Helvetica')
+    doc.fontSize(9).font('Helvetica-Bold').fillColor('#000000')
+      .text('CLIENT', 300, yBloc);
+    doc.font('Helvetica').fillColor('#000000')
       .text(`${client.nom} ${client.prenom}`, 300)
       .text(client.entreprise || '-', 300)
       .text(client.adresse || '-', 300)
@@ -159,60 +166,100 @@ export const downloadInvoice = async (req, res) => {
 
     doc.moveDown(2);
 
-    // Tableau lignes
+    // ── TABLEAU EN-TÊTE ───────────────────────────────────────
     const tableTop = doc.y;
-    doc.rect(50, tableTop, 495, 18).fill('1F3864');
-    doc.fillColor('FFFFFF').fontSize(9).font('Helvetica-Bold')
-      .text('Désignation', 54, tableTop + 4)
-      .text('Qté', 270, tableTop + 4)
-      .text('P.U. HT', 330, tableTop + 4)
-      .text('Remise', 395, tableTop + 4)
-      .text('Sous-total HT', 460, tableTop + 4);
 
-    doc.font('Helvetica').fontSize(9).fillColor('000000');
-    let y = tableTop + 22;
+    // Fond bleu en-tête
+    doc.rect(50, tableTop, 495, 20)
+      .fill('#1F3864');
+
+    // Texte blanc sur fond bleu
+    doc.fillColor('#FFFFFF').fontSize(9).font('Helvetica-Bold')
+      .text('Désignation',   54,  tableTop + 5)
+      .text('Qté',           270, tableTop + 5)
+      .text('P.U. HT',       330, tableTop + 5)
+      .text('Remise',         395, tableTop + 5)
+      .text('Sous-total HT',  455, tableTop + 5);
+
+    // ── LIGNES PRODUITS ───────────────────────────────────────
+    doc.font('Helvetica').fontSize(9);
+    let y = tableTop + 24;
 
     for (const [idx, ligne] of vente.lignes.entries()) {
-      if (idx % 2 === 0) doc.rect(50, y - 2, 495, 18).fill('F8F9FB');
-      doc.fillColor('000000')
+      // Fond alternée
+      if (idx % 2 === 0) {
+        doc.rect(50, y - 2, 495, 20).fill('#F0F4FA');
+      } else {
+        doc.rect(50, y - 2, 495, 20).fill('#FFFFFF');
+      }
+
+      // Texte noir par dessus
+      doc.fillColor('#000000')
         .text(ligne.nom, 54, y, { width: 205 })
         .text(String(ligne.quantite), 270, y)
         .text(`${ligne.prixUnitaireHT.toFixed(2)} €`, 330, y)
-        .text(ligne.remiseLigne > 0 ? `${(ligne.remiseLigne * 100).toFixed(0)}%` : '-', 395, y)
-        .text(`${ligne.sousTotal.toFixed(2)} €`, 460, y);
+        .text(ligne.remiseLigne > 0
+          ? `${(ligne.remiseLigne * 100).toFixed(0)}%`
+          : '-', 395, y)
+        .text(`${ligne.sousTotal.toFixed(2)} €`, 455, y);
+
+      y += 20;
+    }
+
+    // Ligne séparatrice
+    doc.moveTo(50, y + 4).lineTo(545, y + 4)
+      .strokeColor('#CCCCCC').lineWidth(0.5).stroke();
+
+    // ── TOTAUX ────────────────────────────────────────────────
+    y += 16;
+
+    doc.font('Helvetica').fontSize(10).fillColor('#000000')
+      .text('Total HT :', 350, y)
+      .text(`${vente.totalHT.toFixed(2)} €`, 460, y, { width: 85, align: 'right' });
+
+    y += 18;
+
+    if (vente.remiseGlobale > 0) {
+      doc.text(`Remise (${(vente.remiseGlobale * 100).toFixed(0)}%) :`, 350, y)
+        .text(
+          `-${(vente.totalHT * vente.remiseGlobale / (1 - vente.remiseGlobale)).toFixed(2)} €`,
+          460, y, { width: 85, align: 'right' }
+        );
       y += 18;
     }
 
-    doc.moveTo(50, y + 4).lineTo(545, y + 4)
-      .strokeColor('CCCCCC').lineWidth(0.5).stroke();
-
-    y += 16;
-    doc.font('Helvetica').fontSize(10).fillColor('000000')
-      .text('Total HT :', 350, y)
-      .text(`${vente.totalHT.toFixed(2)} €`, 460, y, { width: 85, align: 'right' });
-    y += 18;
-    doc.text('TVA :', 350, y)
+    doc.fillColor('#000000')
+      .text('TVA :', 350, y)
       .text(`${vente.tva.toFixed(2)} €`, 460, y, { width: 85, align: 'right' });
-    y += 4;
-    doc.moveTo(350, y).lineTo(545, y).strokeColor('1F3864').lineWidth(1).stroke();
+
+    y += 6;
+    doc.moveTo(350, y).lineTo(545, y)
+      .strokeColor('#1F3864').lineWidth(1).stroke();
+
     y += 8;
-    doc.font('Helvetica-Bold').fontSize(12)
+    doc.font('Helvetica-Bold').fontSize(12).fillColor('#000000')
       .text('TOTAL TTC :', 350, y)
       .text(`${vente.totalTTC.toFixed(2)} €`, 460, y, { width: 85, align: 'right' });
 
-    y += 28;
-    doc.font('Helvetica').fontSize(10)
+    // ── MODE DE PAIEMENT ──────────────────────────────────────
+    y += 30;
+    doc.font('Helvetica').fontSize(10).fillColor('#000000')
       .text(`Mode de paiement : ${vente.modePaiement}`, 50, y);
 
+    // ── MENTIONS LÉGALES ──────────────────────────────────────
     y += 40;
-    doc.moveTo(50, y).lineTo(545, y).strokeColor('CCCCCC').lineWidth(0.5).stroke();
+    doc.moveTo(50, y).lineTo(545, y)
+      .strokeColor('#CCCCCC').lineWidth(0.5).stroke();
+
     y += 8;
-    doc.fontSize(7).fillColor('888888')
+    doc.fontSize(7).fillColor('#888888').font('Helvetica')
       .text(
         "Facture émise conformément à l'article L441-3 du Code de commerce. " +
         "En cas de retard de paiement, une pénalité de 3 fois le taux d'intérêt légal sera appliquée, " +
-        "ainsi qu'une indemnité forfaitaire de recouvrement de 40€ (art. L441-6 C.com.).",
-        50, y, { width: 495, align: 'justify' }
+        "ainsi qu'une indemnité forfaitaire de recouvrement de 40€ (art. L441-6 C.com.). " +
+        "SIRET : 000 000 000 00000.",
+        50, y,
+        { width: 495, align: 'justify' }
       );
 
     doc.end();
